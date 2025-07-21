@@ -11,13 +11,13 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
+find_package(rclcpp REQUIRED)
 add_executable(client src/client.cpp)
 add_executable(server src/server.cpp)
 
-# ament_target_dependencies(client
-#   rclcpp
-#   std_msgs
-# )
+ament_target_dependencies(client
+  rclcpp
+)
 
 install(TARGETS client server
   DESTINATION lib/${PROJECT_NAME})
