@@ -1,0 +1,51 @@
+# ROS 2 colcon build artifacts
+build/
+install/
+log/
+.colcon/
+
+# ROS 2 Python cache and launch bytecode
+*.pyc
+*.pyo
+__pycache__/
+*.launch.pyc
+*.launch.xml
+*.launch.yaml
+
+# ROS 2 test results
+test_results/
+
+# VS Code settings
+.vscode/
+
+# Python virtual environments
+venv/
+env/
+.virtualenv/
+
+# CMake and build system files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Backup, temporary, or editor swap files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker artifacts
+*.tar
+*.img
+*.container
+*.pid
+
+# CLion / JetBrains
+.idea/
+*.iml
