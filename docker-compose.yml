@@ -1,0 +1,9 @@
+services:
+  ros:
+    container_name: ros2_container
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./src:/ros2_ws/src
+    tty: true
