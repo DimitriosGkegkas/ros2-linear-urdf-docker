@@ -96,4 +96,59 @@ source install/setup.bash
 
 ---
 
+### Step 2: Linear Algebra ROS2 Service
+
+This stage introduces a ROS2 service and two C++ nodes:
+
+- A **server node** that solves a least-squares system using Eigen and applies a random rotation and translation.
+- A **client node** that loads a matrix `A` and vector `b` from a YAML file, sends them to the server, receives the transformed solution, inverts the transformation, and publishes the result.
+
+#### Build the Package
+
+Inside the container:
+
+```bash
+docker exec -it ros2_container bash
+cd /ros2_ws
+colcon build
+source install/setup.bash
+```
+
+#### Run the Server Node
+
+```bash
+ros2 run linear_algebra_service server
+```
+
+#### Run the Client Node (in a second terminal)
+
+```bash
+docker exec -it ros2_container bash
+cd /ros2_ws
+source install/setup.bash
+ros2 run linear_algebra_service client --ros-args --params-file ./src/linear_algebra_service/config/matrix.yaml 
+```
+
+#### Parameters
+
+The client reads a YAML file containing:
+
+```yaml
+/client:
+  ros__parameters:
+    A: [1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0,
+        1.0, 1.0, 1.0]
+    b: [1.0, 2.0, 3.0, 6.0]
+```
+
+#### Notes
+
+- The server subscribes to the client's topic and uses a thread with a condition variable to log received messages.
+- Place the service interface in its own package (`linear_algebra_interfaces`) and nodes in a shared package (`linear_algebra_service`).
+  
+  
+---
+
 Happy hacking with ROS2! 🛠️🐢
