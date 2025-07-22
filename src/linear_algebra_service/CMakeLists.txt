@@ -12,11 +12,26 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 find_package(rclcpp REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(linear_algebra_interfaces REQUIRED)
 add_executable(client src/client.cpp)
 add_executable(server src/server.cpp)
 
+target_link_libraries(server Eigen3::Eigen)
+target_link_libraries(client Eigen3::Eigen)
+
+
 ament_target_dependencies(client
   rclcpp
+  linear_algebra_interfaces
+  geometry_msgs
+  Eigen3
+)
+ament_target_dependencies(server
+  rclcpp
+  linear_algebra_interfaces
+  geometry_msgs
+  Eigen3
 )
 
 install(TARGETS client server
