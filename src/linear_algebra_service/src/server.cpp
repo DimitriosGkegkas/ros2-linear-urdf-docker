@@ -5,9 +5,14 @@
 #include <ctime>
 #include <random>
 #include <Eigen/Dense>
+#include "geometry_msgs/msg/point.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <linear_algebra_interfaces/srv/get_least_squares.hpp>
+
+using std::placeholders::_1;
+using std::placeholders::_2;
+using std::placeholders::_3;
 
 using namespace std;
 
@@ -17,15 +22,19 @@ public:
   Server() : Node("server")
   {
     service_ = this->create_service<linear_algebra_interfaces::srv::GetLeastSquares>(
-        "get_least_squares", Server::handleGetLeastSquares);
+        "get_least_squares", std::bind(&Server::handleGetLeastSquares, this, _1, _2, _3));
+
+    subscriber_ = this->create_subscription<geometry_msgs::msg::Point>(
+        "least_squares_solution", 10, std::bind(&Server::handleSubscription, this, _1));
 
     RCLCPP_INFO(this->get_logger(), "Service 'get_least_squares' is ready.");
   }
 
 private:
   rclcpp::Service<linear_algebra_interfaces::srv::GetLeastSquares>::SharedPtr service_;
+  rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr subscriber_;
 
-  static void
+  void
   handleGetLeastSquares(
       const std::shared_ptr<rmw_request_id_t> request_header,
       const std::shared_ptr<linear_algebra_interfaces::srv::GetLeastSquares::Request> request,
@@ -45,13 +54,13 @@ private:
       }
     }
 
-    RCLCPP_INFO(rclcpp::get_logger("linear_algebra_service"), "Received request for least squares with A size [%ld, %ld] and b size [%ld]",
+    RCLCPP_INFO(this->get_logger(), "Received request for least squares with A size [%ld, %ld] and b size [%ld]",
                 A.rows(), A.cols(), b.size());
 
     Eigen::VectorXf sol = (A.transpose() * A).ldlt().solve(A.transpose() * b);
     std::stringstream ssol;
     ssol << sol.transpose();
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("linear_algebra_service"), "Least Square Solution: " << ssol.str());
+    RCLCPP_INFO_STREAM(this->get_logger(), "Least Square Solution: " << ssol.str());
 
     Eigen::Vector3f translation = Eigen::Vector3f::Random(3);
     response->t.translation.x = translation[0];
@@ -73,7 +82,13 @@ private:
 
     std::stringstream sx_t;
     sx_t << x_t.transpose();
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("linear_algebra_service"), "Transformed Least Square Solution: " << sx_t.str());
+    RCLCPP_INFO_STREAM(this->get_logger(), "Transformed Least Square Solution: " << sx_t.str());
+  }
+
+  void handleSubscription(const geometry_msgs::msg::Point::SharedPtr msg) const
+  {
+    RCLCPP_INFO(this->get_logger(), "Received least squares solution: [%f, %f, %f]",
+                msg->x, msg->y, msg->z);
   }
 };
 

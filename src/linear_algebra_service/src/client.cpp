@@ -31,6 +31,10 @@ public:
     {
       RCLCPP_INFO(this->get_logger(), "Least squares solution: [%f, %f, %f]",
                   leastSquareSolution->x, leastSquareSolution->y, leastSquareSolution->z);
+
+      // Publish the solution
+      publisher_->publish(*leastSquareSolution);
+      RCLCPP_INFO(this->get_logger(), "Published least squares solution to topic 'least_squares_solution'");
     }
     else
     {
