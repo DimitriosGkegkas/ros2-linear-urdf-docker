@@ -29,8 +29,9 @@ public:
         std::vector<double> joint_position_start;
         this->get_parameter("joint_positions", joint_position_start);
         joint_position_start_ = Eigen::VectorXd::Map(joint_position_start.data(), joint_position_start.size());
-        joint_position_goal_ = Eigen::VectorXd(6);
-        joint_position_goal_ << 1.0, 0., 0.0, 0.0, 0.0, 0.0; // Example goal positions
+        // Random goal positions for demonstration
+        // Is it with in safe limits? I should check first the joint limit through /robot_description
+        joint_position_goal_ = Eigen::VectorXd::Random(joint_position_start_.size()) * PI; 
         joint_position_current_ = joint_position_start_;
 
         visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base_link", "/rviz_visual_markers", this));
