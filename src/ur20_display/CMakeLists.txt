@@ -36,6 +36,7 @@ install(TARGETS joint_state_publisher
 install(DIRECTORY
   launch
   config
+  rviz
   DESTINATION share/${PROJECT_NAME}/
 )
 
