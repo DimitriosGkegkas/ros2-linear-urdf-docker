@@ -30,12 +30,11 @@ RUN apt-get update && apt-get install -y \
     libyaml-cpp-dev \
     ros-humble-rviz-visual-tools
 
-RUN apt install ros-humble-joint-state-publisher -y
-RUN apt install ros-humble-joint-state-publisher-gui -y
-
-RUN apt install ros-humble-tf2-ros -y
-RUN apt install ros-humble-rosbridge-server -y
-RUN apt install ros-humble-xacro -y
+RUN apt-get update && apt-get install -y \
+    ros-humble-joint-state-publisher \
+    ros-humble-tf2-ros \
+    ros-humble-rosbridge-server \
+    ros-humble-xacro
 
 RUN mkdir -p /ros2_ws/src
 WORKDIR /ros2_ws
