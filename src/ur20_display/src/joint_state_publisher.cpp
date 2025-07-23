@@ -8,6 +8,9 @@
 #include "tf2_ros/buffer.h"
 #include <Eigen/Geometry>
 #include <rviz_visual_tools/rviz_visual_tools.hpp>
+#include <Eigen/Dense>
+
+#define PI 3.14159265358979323846
 
 class JointStatePublisher : public rclcpp::Node
 {
@@ -18,13 +21,26 @@ public:
         // Define Parameters
         this->declare_parameter<std::vector<std::string>>("joint_names", {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"});
         this->declare_parameter<std::vector<double>>("joint_positions", {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+        this->declare_parameter<double>("period", 5.0); // Default period of 5 seconds
+
+        period_ = this->get_parameter("period").as_double();
+
+        // Initialize joint positions
+        std::vector<double> joint_position_start;
+        this->get_parameter("joint_positions", joint_position_start);
+        joint_position_start_ = Eigen::VectorXd::Map(joint_position_start.data(), joint_position_start.size());
+        joint_position_goal_ = Eigen::VectorXd(6);
+        joint_position_goal_ << 1.0, 0., 0.0, 0.0, 0.0, 0.0; // Example goal positions
+        joint_position_current_ = joint_position_start_;
 
         visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base_link", "/rviz_visual_markers", this));
 
         // Create Publisher
+        // sleep for a while to ensure the system is ready
+        rclcpp::sleep_for(std::chrono::seconds(1));
         publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
         _publish_timer = this->create_wall_timer(
-            std::chrono::milliseconds(100),
+            std::chrono::milliseconds(1),
             std::bind(&JointStatePublisher::publish_joint_states, this));
         RCLCPP_INFO(this->get_logger(), "Joint State Publisher Node has been started.");
 
@@ -42,15 +58,31 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr publisher_;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+    Eigen::VectorXd joint_position_start_;
+    Eigen::VectorXd joint_position_goal_;
+    Eigen::VectorXd joint_position_current_;
+    double start_time_;
+    double period_;
     // For visualizing things in rviz
     rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
     void publish_joint_states()
     {
+        if (!start_time_)
+        {
+            // Initialize start time on first call
+            start_time_ = this->get_clock()->now().seconds();
+        }
+        auto t = (this->get_clock()->now().seconds() - start_time_);
+        if (t <= period_ * 1.5)
+        {
+            joint_position_current_ = (joint_position_goal_ - joint_position_start_) * std::sin(2 * PI * t / period_ - PI / 2) / 2. + (joint_position_goal_ + joint_position_start_) / 2.;
+        }
+
         auto message = sensor_msgs::msg::JointState();
         message.header.stamp = this->get_clock()->now();
         this->get_parameter("joint_names", message.name);
-        this->get_parameter("joint_positions", message.position);
+        message.position = std::vector<double>(joint_position_current_.data(), joint_position_current_.data() + joint_position_current_.size());
         publisher_->publish(message);
     }
 
@@ -58,7 +90,6 @@ private:
     {
         try
         {
-
             // I guess there is an easier way to transform ros2 transforms to Eigen, (found package tf2_eigen)
             geometry_msgs::msg::TransformStamped transformStamped;
             transformStamped = tf_buffer_->lookupTransform("world", "gripper_link", tf2::TimePointZero);
