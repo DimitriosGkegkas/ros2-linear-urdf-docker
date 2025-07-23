@@ -82,7 +82,6 @@ private:
     void trajectory_loop()
     {
         current_time_ += dt; // Not using rclcpp::Clock cause issues with the timer
-        RCLCPP_INFO(this->get_logger(), "Trajectory loop running at time: %f", current_time_);
         if (current_time_ <= period_ * 1.5)
         {
             joint_position_current_ = (joint_position_goal_ - joint_position_start_) * std::sin(2 * PI * current_time_ / period_ - PI / 2) / 2. + (joint_position_goal_ + joint_position_start_) / 2.;
