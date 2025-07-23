@@ -35,6 +35,11 @@ def generate_launch_description():
             }],
     )
     
+    joint_plotter_node = Node(
+        package="ur20_display",
+        executable="plotter.py",
+    )
+    
     
     # rviz_config_file = PathJoinSubstitution(
     #     [FindPackageShare("ur_description"), "rviz", "view_robot.rviz"]
@@ -50,6 +55,7 @@ def generate_launch_description():
     nodes_to_start = [
         joint_state_publisher_node,
         robot_state_publisher_node,
+        joint_plotter_node,
         # rviz_node,
     ]
 

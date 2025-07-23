@@ -41,7 +41,7 @@ public:
         rclcpp::sleep_for(std::chrono::seconds(1));
         publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
         _publish_timer = this->create_wall_timer(
-            std::chrono::milliseconds(1),
+            std::chrono::milliseconds(10),
             std::bind(&JointStatePublisher::publish_joint_states, this));
         RCLCPP_INFO(this->get_logger(), "Joint State Publisher Node has been started.");
 
