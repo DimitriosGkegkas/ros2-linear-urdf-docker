@@ -6,4 +6,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src:/ros2_ws/src
+    ports:
+      - "9090:9090"
     tty: true
