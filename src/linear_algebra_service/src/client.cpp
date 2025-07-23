@@ -20,12 +20,32 @@ public:
                                      4.0, 5.0, 6.0,
                                      7.0, 8.0, 9.0});
 
-    auto b = this->get_parameter("b").as_double_array();
-    auto A = this->get_parameter("A").as_double_array();
-
+    // Define Client and Publisher
     client_ = this->create_client<linear_algebra_interfaces::srv::GetLeastSquares>("get_least_squares");
     publisher_ = this->create_publisher<geometry_msgs::msg::Point>("least_squares_solution", 10);
 
+    // Wait for the service to be available
+    while (!client_->wait_for_service(1s))
+    {
+      if (!rclcpp::ok())
+      {
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+        return;
+      }
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service not available, waiting again...");
+    }
+
+    auto b = this->get_parameter("b").as_double_array();
+    auto A = this->get_parameter("A").as_double_array();
+
+    // Check input sizes
+    if (A.size() % 3 != 0 || A.size() / 3 != b.size())
+    {
+      RCLCPP_ERROR(this->get_logger(), "Invalid A or b sizes: A must have 3 columns and match b's row count");
+      return;
+    }
+
+    this->logInfo(A, b);
     auto leastSquareSolution = this->getLeastSquares(A, b);
     if (leastSquareSolution)
     {
@@ -48,27 +68,14 @@ private:
 
   optional<geometry_msgs::msg::Point> getLeastSquares(const vector<double> &A, const vector<double> &b)
   {
-
-    this->logInfo(A, b);
-
     // Creating request
     auto request = std::make_shared<linear_algebra_interfaces::srv::GetLeastSquares::Request>();
     request->a = A;
     request->b = b;
 
-    // Wait for the service to be available
-    while (!client_->wait_for_service(1s))
-    {
-      if (!rclcpp::ok())
-      {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-        return std::nullopt;
-      }
-      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service not available, waiting again...");
-    }
-
     // Call the service asynchronously
     auto result = client_->async_send_request(request);
+    
     // Wait for the result.
     if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) ==
         rclcpp::FutureReturnCode::SUCCESS)
