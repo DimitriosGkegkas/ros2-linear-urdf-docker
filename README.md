@@ -24,6 +24,14 @@ This repository provides a minimal, containerized ROS2 Humble setup and includes
 
 ## 🛠️ Setup
 
+### ⚠️ Important: Clone with Submodules
+
+Make sure to **clone the repository with submodules**:
+
+```bash
+git clone --recurse-submodules <repo-url>
+```
+
 ### 1. Build the Docker Image
 
 ```bash
@@ -178,6 +186,8 @@ For more details, refer to the official ROS Docker GUI tutorial:
 Docker containers on macOS cannot natively forward GUI applications like RViz. A simple and effective workaround is to use **Foxglove Studio**, a web-based visualization tool.
 
 #### Steps:
+
+## 🛠️ Setup
 
 1. Install Foxglove Studio:  
    👉 https://foxglove.dev/download
