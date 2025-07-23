@@ -1,5 +1,9 @@
 #include <vector>
 #include <string>
+#include <memory>
+#include <chrono>
+#include <ctime>
+#include <cstdlib>
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -21,7 +25,7 @@ public:
         // Define Parameters
         this->declare_parameter<std::vector<std::string>>("joint_names", {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"});
         this->declare_parameter<std::vector<double>>("joint_positions", {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
-        this->declare_parameter<double>("period", 5.0); // Default period of 5 seconds
+        this->declare_parameter<double>("period", 10.0); // Default period of 5 seconds
 
         period_ = this->get_parameter("period").as_double();
 
@@ -31,10 +35,9 @@ public:
         joint_position_start_ = Eigen::VectorXd::Map(joint_position_start.data(), joint_position_start.size());
         // Random goal positions for demonstration
         // Is it with in safe limits? I should check first the joint limit through /robot_description
-        joint_position_goal_ = Eigen::VectorXd::Random(joint_position_start_.size()) * PI; 
+        std::srand(static_cast<unsigned>(std::time(nullptr)));
+        joint_position_goal_ = Eigen::VectorXd::Random(joint_position_start_.size()) * PI;
         joint_position_current_ = joint_position_start_;
-
-        visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base_link", "/rviz_visual_markers", this));
 
         // Create Publisher
         // sleep for a while to ensure the system is ready
@@ -45,11 +48,14 @@ public:
             std::bind(&JointStatePublisher::publish_joint_states, this));
         RCLCPP_INFO(this->get_logger(), "Joint State Publisher Node has been started.");
 
+        visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base_link", "/rviz_visual_markers", this));
+        visual_tools_->loadMarkerPub();
+        visual_tools_->setLifetime(2.0);
         // Initialize tf listener
         tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
         _transform_timer = this->create_wall_timer(
-            std::chrono::milliseconds(1000),
+            std::chrono::milliseconds(100),
             std::bind(&JointStatePublisher::check_transform, this));
     }
 
@@ -125,7 +131,16 @@ private:
 
             if ((T_world_to_elbow * T_elbow_to_gripper).isApprox(T_world_to_gripper))
             {
-                visual_tools_->publishAxis(T_world_to_gripper, 2.0, 1.0, "Tf_elbow_gripper");
+                visual_tools_->publishAxis(T_world_to_gripper, 0.5, 0.02, "Tf_elbow_gripper");
+                T_world_to_gripper.translate(Eigen::Vector3d(0.5, 0.0, 0.));
+                visual_tools_->publishText(
+                    T_world_to_gripper,
+                    "Tf_elbow_gripper",
+                    rviz_visual_tools::WHITE,
+                    rviz_visual_tools::XLARGE,
+                    false
+                );
+                visual_tools_->trigger();
                 RCLCPP_INFO(this->get_logger(), "Transforms are consistent");
             }
             else
